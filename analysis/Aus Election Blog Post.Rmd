@@ -281,7 +281,7 @@ as_leader_tweets %>%
 
 The use of media is interesting when it comes to politicians... who doesn't love a good opportunity to awkwardly shake a few hands or awkwardly kiss a few babies, while the cameras are around?!
 
-Shorten tends to include photos in more of his tweets than ScoMo, with almost 50% of all of Shorten's tweets containing a photo. ScoMo isn't far behind, with 47% of his tweets containing a photo, but he needs to lift his baby kissing game.
+Shorten tends to include photos in more of his tweets than ScoMo, with almost 50% of all of Shorten's tweets containing a photo. ScoMo isn't far behind, with 47% of his tweets containing a photo, but he needs to lift his baby kissing game. I'm going to call this a tie. Like in tennis, either candidate needs to win by two or more games (yes I realise this isn't tennis, I'm choosing political parties based on their tweets so there are no rules here).
 
 ```{r, warning=FALSE, message=FALSE}
 as_leader_tweets %>%
