@@ -9,10 +9,10 @@ source("libs/libraries.R")
 ## authenticate via access token
 token <- create_token(
   # app = "my_twitter_research_app",
-  consumer_key = "WmXAr0rFnlIGd13HF1EOkcWl3",
-  consumer_secret = "m5PoxUmwrCeTvHXuEtwSydy5Bbq2GomPdZvNxK42DV21dIlRNv",
-  access_token = "384594674-bwZvOUQ9oGGR3plb5b0Q6fk0R5kgalWhTUSJi0vD",
-  access_secret = "nabkwDrIlFDLJKsjoXsYz7eSroNoyFVtZW5qfwcXcwd9X")
+  consumer_key = "xxxx",
+  consumer_secret = "xxxx",
+  access_token = "xxxx",
+  access_secret = "xxxx")
 
 
 
