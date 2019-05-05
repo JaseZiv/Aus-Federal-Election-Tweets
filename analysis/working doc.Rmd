@@ -1,0 +1,468 @@
+---
+title: "Analysis of tweets"
+author: "Jason Zivkovic"
+date: "04/05/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# load libraries
+source("lib/libraries.R")
+
+pm_candidate_tweets <- readRDS("data/pm_candidate_tweets_raw.rds")
+```
+
+
+```{r}
+# select only required columns
+pm_candidate_tweets_clean <- pm_candidate_tweets %>% 
+  select(user_id, screen_name, created_at, text, source, display_text_width, is_quote, is_retweet, favorite_count, retweet_count, hashtags, media_type, mentions_screen_name, retweet_text, retweet_created_at, retweet_screen_name, followers_count, friends_count, profile_image_url)
+
+rm(pm_candidate_tweets);gc()
+
+# separate created_at variable into date and time variables
+pm_candidate_tweets_clean <- pm_candidate_tweets_clean %>% separate(col = created_at, into = c("created_date", "created_time"), sep = "\\s")
+
+pm_candidate_tweets_clean <- pm_candidate_tweets_clean %>% 
+  mutate(created_date = ymd(created_date),
+         created_month = month(created_date, label = T),
+         created_year = year(created_date),
+         created_yearmon = format(as.Date(created_date), "%Y-%m"))
+
+```
+
+
+```{r}
+party_colours <- c("#CC0000", "#0033CC")
+```
+
+
+## Who has tweeted more?
+
+```{r}
+pm_candidate_tweets_clean %>%
+  filter(created_date >= '2018-08-24') %>%
+  count(screen_name) %>%
+  ggplot(aes(x= screen_name, y = n, fill = screen_name)) +
+  geom_col(colour = "black") +
+  coord_flip() +
+  geom_text(aes(label = n), hjust = 1, size = 10, colour = "white") +
+  scale_fill_manual(values = party_colours) +
+  ggtitle("Shorten Tweeting More Than ScoMo", subtitle = "Tweet data from when ScoMo took office (Aug-2018)") +
+  theme_minimal() +
+  theme(axis.title = element_blank(), axis.text.x = element_blank(), legend.position = "none", panel.grid.minor = element_blank())
+
+```
+
+
+## Tweeting activity per month - who tweets more per month?
+
+```{r}
+pm_candidate_tweets_clean %>%
+  filter(created_year >= 2018) %>%
+  count(screen_name, created_yearmon) %>%
+  ggplot(aes(x= created_yearmon, y= n, colour = screen_name, group = screen_name)) +
+  geom_line() +
+  geom_point() +
+  annotate("segment", x='2018-05', xend = '2018-08', y= 100, yend = 36, arrow = arrow(), colour = "darkgrey") +
+  annotate("text", x= '2018-05', y= 108, label = "ScoMo\nbecomes PM", size = 6, colour = "darkgrey") +
+  scale_colour_manual(values = party_colours, name = "") +
+  ggtitle("Both Leaders Tweting With Increased Frequency") +
+  labs(y= "Number of Tweets", x= "Month") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45), panel.grid.major.y = element_line(linetype = 2), panel.grid.minor.y = element_line(linetype = 2), panel.grid.major.x = element_blank(), legend.position = "top")
+
+```
+
+
+## which leader retweets more?
+
+first will create a df of tweets since ScoMo has been in office
+
+Shorten's retweet rate is almost 13% of tweets are retweets to ScoMo's 11%
+```{r}
+as_leader_tweets <- pm_candidate_tweets_clean %>%
+  filter(created_date >= ScoMo_start_date)
+
+as_leader_tweets %>%
+  group_by(screen_name, is_retweet) %>% 
+  summarise(n_tweets = n()) %>%
+  mutate(proportion_retweet = percent(n_tweets / sum(n_tweets)))
+```
+
+
+
+
+## who get's more favourited tweets?
+first need to exclude retweets from the data
+
+```{r}
+as_leader_tweets %>%
+  filter(is_retweet == FALSE) %>%
+  ggplot(aes(x= screen_name, y= favorite_count, fill = screen_name, colour = screen_name)) +
+  geom_boxplot(alpha = 0.5) +
+  scale_fill_manual(values = party_colours) +
+  scale_colour_manual(values = party_colours) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Shorten Gets More Favourites,\nScoMo Has The Tweet With Most Favourites", y= "Favourite Count") +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(), legend.position = "none")
+
+
+
+
+as_leader_tweets %>%
+  filter(is_retweet == FALSE, favorite_count < 10000) %>%
+  ggplot(aes(x= screen_name, y= favorite_count, fill = screen_name, colour = screen_name)) +
+  geom_boxplot(alpha = 0.5) +
+  scale_fill_manual(values = party_colours) +
+  scale_colour_manual(values = party_colours) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Shorten Gets More Favourites,\nScoMo Has The Tweet With Most Favourites",
+       subtitle = "Removing ScoMo's outlier really highlights this difference", y= "Favourite Count") +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(), legend.position = "none")
+  
+```
+
+
+
+## Who gets more retweets?
+
+```{r}
+as_leader_tweets %>%
+  filter(is_retweet == FALSE) %>%
+  ggplot(aes(x= retweet_count, fill = screen_name)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(values = party_colours) +
+  scale_colour_manual(values = party_colours) +
+  scale_x_continuous(labels = comma) +
+  labs(title = "Shorten Gets More Retweets", x= "Retweet Count") +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(), legend.position = "top", legend.title = element_blank())
+```
+
+
+
+
+# Which devices are leaders tweeting from?
+
+```{r}
+as_leader_tweets %>%
+  filter(is_retweet == FALSE) %>%
+  ggplot(aes(x= screen_name, fill = source)) +
+  geom_bar(stat = "count", position = "fill")
+```
+
+
+
+## Who has longer tweets?
+
+going to use the standard pre-processing steps I take with most text analysis work I do, counts, word counts, etc...
+
+```{r}
+as_leader_tweets <- as_leader_tweets %>%
+  mutate(TweetCharacterLength = str_length(text),
+         TweetSentencesCount = str_count(text, "[[:alnum:] ][.!?]"),
+         TweetWordCount = str_count(text, "[[:alpha:][-]]+"),
+         TweetCapitalsCount = str_count(text, "[A-Z]"),
+         TweetLettersCount = str_count(text, "[A-Za-z]"),
+         TweetPunctuationCount = str_count(text, "[[:punct:]]"),
+         TweetExclamationCount = str_count(text, fixed("!")),
+         TweetQuestionCount = str_count(text, fixed("?")),
+         TweetDigitsCount = str_count(text, "[[:digit:]]"),
+         TweetDistinctWordsCount = lengths(lapply(strsplit(text, split = ' '), unique)),
+         TweetLexicalDensity = TweetDistinctWordsCount / TweetWordCount)
+
+```
+
+
+
+```{r}
+med_chars <- as_leader_tweets %>% 
+  filter(is_retweet == FALSE) %>%
+  group_by(screen_name) %>%
+  summarise(tweet_med_chars = median(TweetCharacterLength)) %>% ungroup()
+
+
+as_leader_tweets %>% 
+  filter(is_retweet == FALSE) %>%
+  ggplot(aes(x= TweetCharacterLength, fill = screen_name)) +
+  geom_histogram(alpha = 0.5, colour = "black") +
+  scale_fill_manual(values = party_colours) +
+  labs(title = "ScoMo's Tweets Tend To Be Longer", x = "Character Length") +
+  facet_wrap(~ screen_name, ncol = 1) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.title.y = element_blank(), panel.grid = element_line(linetype = 2), strip.text = element_text(face = "bold")) +
+  geom_vline(aes(xintercept = tweet_med_chars), data = med_chars, size = 1, linetype = 2) +
+  geom_text(aes(x= tweet_med_chars + 15, label = paste0("Median: ", tweet_med_chars)), data = med_chars, y= 50)
+
+
+
+
+as_leader_tweets %>% 
+  filter(is_retweet == FALSE) %>%
+  ggplot(aes(x= screen_name, y= TweetWordCount, fill = screen_name)) +
+  geom_boxplot(alpha = 0.5)
+
+```
+
+
+
+## Who uses hashtags more?
+
+```{r}
+as_leader_tweets %>%
+  filter(is_retweet == FALSE) %>%
+  mutate(is_hashtag = ifelse(is.na(hashtags), FALSE, TRUE)) %>%
+  group_by(screen_name, is_hashtag) %>%
+  summarise(n_hashtags = n()) %>%
+  mutate(hashtag_proportion = n_hashtags / sum(n_hashtags)) %>%
+  filter(is_hashtag == TRUE) %>%
+  ggplot(aes(x= screen_name, y= hashtag_proportion, fill = screen_name)) +
+  geom_col(colour = "black") +
+  geom_text(aes(label = percent(hashtag_proportion)), vjust = 1.1, colour = "white") +
+  scale_fill_manual(values = party_colours) +
+  scale_y_continuous(labels = percent) +
+  labs(title = "ScoMo Uses Hashtags More Often Than Shorten", y= "Proportion Tweets With Hashtags") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(), axis.title.x = element_blank(), legend.position = "none", axis.text.y = element_blank())
+```
+
+
+
+## Who uses more media (photos, videos)?
+
+```{r}
+as_leader_tweets %>%
+  filter(is_retweet == FALSE) %>%
+  mutate(is_media = ifelse(!is.na(media_type), FALSE, TRUE)) %>%
+  group_by(screen_name, is_media) %>% 
+  summarise(n_media = n()) %>% 
+  mutate(media_proportion = n_media / sum(n_media)) %>%
+  filter(is_media == TRUE) %>%
+  ggplot(aes(x= screen_name, y= media_proportion, fill = screen_name)) +
+  geom_col(colour = "black") +
+  geom_text(aes(label = percent(media_proportion)), vjust = 1.1, colour = "white") +
+  scale_fill_manual(values = party_colours) +
+  scale_y_continuous(labels = percent) +
+  labs(title = "Shorten Includes Photos More Often Than ScoMo", y= "Proportion Tweets With Media") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(), axis.title.x = element_blank(), legend.position = "none", axis.text.y = element_blank())
+```
+
+
+
+# Tweet Content Analysis
+
+After spending ages trying to work out why thefunction `fix.contractions` wouldn't work,  I realised it's because Twitter text contains a different appostrophe; "’" vs the standard apostrophe in R (" ' "). This is something to be wary of in the future.
+
+```{r}
+# function to expand contractions in an English-language source
+fix.contractions <- function(doc) {
+  # "won't" is a special case as it does not expand to "wo not"
+  doc <- gsub("won’t", "will not", doc)
+  doc <- gsub("can’t", "can not", doc)
+  doc <- gsub("n’t", " not", doc)
+  doc <- gsub("’ll", " will", doc)
+  doc <- gsub("’re", " are", doc)
+  doc <- gsub("’ve", " have", doc)
+  doc <- gsub("’m", " am", doc)
+  doc <- gsub("’d", " would", doc)
+  # 's could be 'is' or could be possessive: it has no expansion
+  doc <- gsub("’s", "", doc)
+  return(doc)
+}
+
+
+# fix (expand) contractions
+as_leader_tweets$text <- sapply(as_leader_tweets$text, fix.contractions)
+
+# dont want to see when either leader has been mention so am taking their twitter handle out
+words_to_remove <- c("amp", "scottmorrisonmp", "billshortenmp")
+
+# create a df of unested words (tokens)
+tweets_words <- as_leader_tweets %>%
+  mutate(text = gsub("https.*$", "", text),
+         text = str_remove_all(text, "[:digit:]")) %>%
+  select(status_id, screen_name, created_date, created_time, text) %>%
+  unnest_tokens(word, text, drop = F) %>%
+  anti_join(stop_words, by = "word") %>%
+  filter(!word %in% words_to_remove)
+
+# create a df to calculate the proportion (term-frequency) words are used
+word_proportion <- tweets_words %>%
+  group_by(screen_name, word) %>%
+  summarise(n_words = n()) %>% ungroup() %>% 
+  left_join(as_leader_tweets %>% group_by(screen_name) %>% summarise(n_tweets = n()), by = "screen_name") %>%
+  mutate(word_prop = n_words / n_tweets)
+
+# function to plot top 30 words
+top_words_plot <- function(df, polly, party) {
+  
+  df %>%
+    filter(screen_name == polly) %>%
+    arrange(desc(word_prop)) %>%
+    head(30) %>%
+    ggplot(aes(x= reorder(word, word_prop), y= word_prop)) +
+    geom_col(fill = party) +
+    ggtitle(paste0(polly, "'s 20 Most Frequently Used Words")) +
+    geom_text(aes(label = n_words), hjust = 1, colour = "white") +
+    scale_y_continuous(labels = percent) +
+    coord_flip() +
+    theme_minimal() +
+    theme(axis.title = element_blank(), panel.grid = element_blank(), panel.grid.major.x = element_line(linetype =2))
+}
+
+# create an object for each party's colours for plotting
+labor <- party_colours[1]
+liberals <- party_colours[2]
+
+# create and display multi-plot
+sm <- top_words_plot(word_proportion, "ScottMorrisonMP", liberals)
+bs <- top_words_plot(word_proportion, "billshortenmp", labor)
+
+gridExtra::grid.arrange(sm, bs, ncol = 2)
+  
+```
+
+
+## How often does each leader mention their opponent
+
+```{r}
+lib_words <- c("labor", "bill", "shorten", "opposition")
+lab_words <- c("liberal", "liberals", "scott", "morrison")
+
+tweets_words <- tweets_words %>%
+  mutate(is_competitor_mention = ifelse(screen_name == "billshortenmp" & word %in% lab_words, TRUE, ifelse(screen_name == "ScottMorrisonMP" & word %in% lib_words, TRUE, FALSE)))
+
+
+comp_mention <- tweets_words %>%
+  count(status_id, screen_name, is_competitor_mention) %>%
+  spread(key = is_competitor_mention, value = n) %>%
+  mutate(is_competitor_mention = ifelse(is.na(`TRUE`), FALSE, TRUE)) %>%
+  select(status_id, screen_name, is_competitor_mention)
+
+
+comp_mention %>%
+  group_by(screen_name, is_competitor_mention) %>%
+  summarise(n_comp_mentions = n()) %>%
+  mutate(proportion_comp_mention = n_comp_mentions / sum(n_comp_mentions)) %>%
+  filter(is_competitor_mention == TRUE) %>%
+  ggplot(aes(x= screen_name, y= proportion_comp_mention, fill = screen_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = percent(proportion_comp_mention)), vjust = 1.1, colour = "white") +
+  scale_fill_manual(values = party_colours) +
+  scale_y_continuous(labels = percent) +
+  labs(title = "Shorten Mentions ScoMo Considerably More Often Than ScoMo Mentioning Shorten", y= "Proportion Competitor Mentions") +
+  theme_minimal() +
+  theme(legend.position = "none", axis.title.x = element_blank())
+
+```
+
+
+# Who is the more positive tweeter?
+
+Join afinn lexicon from Finn Årup Nielsen (http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010)
+
+The AFINN lexicon assigns words with a score that runs between -5 and 5, with negative scores indicating negative sentiment and positive scores indicating positive sentiment.
+
+Not every English word is in the lexicons because many English words are pretty neutral. It is important to keep in mind that these methods do not take into account qualifiers before a word, such as in “no good” or “not true”; a lexicon-based method like this is based on unigrams only. For many kinds of text (like the narrative examples below), there are not sustained sections of sarcasm or negated text, so this is not an important effect.
+
+https://www.tidytextmining.com/sentiment.html
+
+
+```{r}
+ tweet_sentiment <- tweets_words %>%
+  inner_join(get_sentiments("afinn"), by = "word")
+
+
+tweet_sentiment %>%
+  group_by(screen_name) %>%
+  summarise(positivity_index = sum(score)) %>%
+  ggplot(aes(x= screen_name, y= positivity_index, fill = screen_name)) +
+  geom_bar(stat = "identity", colour = "black") +
+  scale_fill_manual(values = party_colours) +
+  labs(title = "ScoMo Is More positive In Tweets Than Shorten", subtitle = "Score is based on the 'afinn' lexicon", y= "Positivity Score") +
+  theme_minimal() +
+  theme(legend.position = "none", axis.title.x = element_blank(), panel.grid = element_line(linetype = 2), panel.grid.major.x = element_blank())
+
+
+```
+
+
+```{r}
+tweet_sentiment %>%
+  mutate(created_yearmon = format(as.Date(created_date), "%Y-%m")) %>%
+  group_by(screen_name, created_yearmon) %>%
+  summarise(positivity_index = sum(score)) %>%
+  ggplot(aes(x= created_yearmon, y= positivity_index, colour = screen_name, group = screen_name)) +
+  geom_line() + 
+  geom_point() +
+  scale_colour_manual(values = party_colours) +
+  labs(title = "Shorten Ramping Up Negativity In The Lead Up To The Election", y= "Positivity Score") +
+  theme_minimal() +
+  theme(legend.position = "top", legend.title = element_blank(), axis.title.x = element_blank(), panel.grid = element_line(linetype = 2))
+```
+
+
+
+
+
+
+
+
+```{r}
+tweet_sentiment %>%
+  group_by(screen_name, word) %>%
+  summarise(positivity_index = sum(score)) %>%
+  filter(screen_name == "ScottMorrisonMP") %>%
+  arrange(desc(positivity_index)) %>%
+  head(20) %>%
+  ggplot(aes(x= reorder(word, positivity_index), y= positivity_index)) +
+  geom_col() +
+  coord_flip()
+
+tweet_sentiment %>%
+  group_by(screen_name, word) %>%
+  summarise(positivity_index = sum(score)) %>%
+  filter(screen_name == "billshortenmp") %>%
+  arrange(desc(positivity_index)) %>%
+  head(20) %>%
+  ggplot(aes(x= reorder(word, positivity_index), y= positivity_index)) +
+  geom_col() +
+  coord_flip()
+
+
+tweet_sentiment %>%
+  group_by(screen_name, word) %>%
+  summarise(positivity_index = sum(score)) %>%
+  filter(screen_name == "ScottMorrisonMP") %>%
+  arrange(desc(positivity_index)) %>%
+  tail(20) %>%
+  ggplot(aes(x= reorder(word, -positivity_index), y= positivity_index)) +
+  geom_col() +
+  coord_flip()
+
+tweet_sentiment %>%
+  group_by(screen_name, word) %>%
+  summarise(positivity_index = sum(score)) %>%
+  filter(screen_name == "billshortenmp") %>%
+  arrange(desc(positivity_index)) %>%
+  tail(20) %>%
+  ggplot(aes(x= reorder(word, -positivity_index), y= positivity_index)) +
+  geom_col() +
+  coord_flip()
+
+
+```
+
+
+
+
