@@ -1,5 +1,5 @@
 ---
-title: "Federal Election... Who To Vote For?"
+title: "Federal Election... Who To Vote For According To Twitter"
 author: "Jason Zivkovic"
 date: "04/05/2019"
 output:
@@ -25,9 +25,9 @@ Hence me exercising my democratic right to donkey vote.
 
 It's not that I don't care about the state of our great and lucky country (I mean that with all sincerity), rather, it's that the choice we face is essentially the same, with only the most minor of differences in policies. We're lucky in that our vote is not a vote between freedom or oppression, so maybe that's been the driver for my ignorant behaviour?
 
-This year's vote sees Scott Morrison of the Liberals taking on Bill Shorten of Labor. Scott Morrison, referred to as ScoMo, became the Liberal leader after a successful coup against Malcolm Turnbull on August 24th 2018.
+This year's vote sees Scott Morrison of the Liberals (the blue, right-leaning party for non-Aussies) taking on Bill Shorten of Labor (the red, left-leaning party). Scott Morrison, referred to as ScoMo, became the Liberal leader after a successful coup against Malcolm Turnbull on August 24th 2018.
 
-This year is different through (not the starkness of the differences between the two major political parties), this year I think I want to make a vote. But to do it, one of the pieces of information I'll use is which leader's tweeting activity I like more. This won't be the only piece of information I base my vote on (I'm not completely mad), but it will be a start. 
+This year is different though - not the starkness of the differences between the two major political parties - this year I think I want to make a vote. But to do it, one of the pieces of information I'll use is which leader's tweeting activity I like more. This won't be the only piece of information I base my vote on (I'm not completely mad), but it will be a start. 
 
 I started this analysis with a completely blank slate. Furthermore, I didn't even know what Twitter activity I was going to base my vote on. I just wen't ahead and collected tweets from both ScoMo and Shorten and took it from there.
 
@@ -74,6 +74,11 @@ ScoMo_start_date <- '2018-08-24'
 # plotting help
 party_colours <- c("#CC0000", "#0033CC")
 
+# create an object for each party's colours for plotting
+labor <- party_colours[1]
+liberals <- party_colours[2]
+
+
 ```
 
 
@@ -81,7 +86,7 @@ party_colours <- c("#CC0000", "#0033CC")
 
 The analysis looks at tweets the two leaders have been creating since ScoMo took office.
 
-I will ask a number of questions, with the winner of each being awarded a point. Whoever has more points at the end of the analysis will get my vote.
+I will ask a number of questions, with the winner of each being awarded a point. Whoever has more points at the end of the analysis will get my vote for the Twitter portion of this decision process.
 
 There is a real limitation in this analysis though - Twitter is only one platform, so taking all social media platforms may have yielded different results. Additionally, the demographic of either party's constituents may or may not be all that suited to this platform. In saying that, why sweat the small stuff?!
 
@@ -91,7 +96,7 @@ There is a real limitation in this analysis though - Twitter is only one platfor
 Since ScoMo took office, he has tweeted or retweeted `r pm_candidate_tweets_clean %>% filter(screen_name == "ScottMorrisonMP", created_date >= ScoMo_start_date) %>% nrow()` time, while in that same time Shorten has tweeted `r pm_candidate_tweets_clean %>% filter(screen_name == "billshortenmp", created_date >= ScoMo_start_date) %>% nrow()` times.
 
 
-Since ScoMo took office, Bill Shorten has been tweeting far more frequently in all full months, with only January this year seeing the gap between the two fairly close.
+In that same time, Bill Shorten has been tweeting far more frequently in all full months, with only January this year seeing the gap between the two fairly close.
 
 ```{r, message=FALSE, warning=FALSE}
 pm_candidate_tweets_clean %>%
@@ -111,8 +116,11 @@ pm_candidate_tweets_clean %>%
 
 Additionally, since the beginning of 2018, ScoMo has only tweeted more than Shorten for the month twice, coming in consecutive months in May and June (in his then capacity as Treasurer, no doubt spruiking that year's budget).
 
-**Winner:**
-Bill Shorten
+#### Winner:
+
+<left><img src="`r pm_candidate_tweets_clean$profile_image_url[pm_candidate_tweets_clean$screen_name == "billshortenmp"][1]`"></left> 
+
+**Bill Shorten (Shorten 1, Sco Mo 0)**
 
 
 ## Who's tweets are more popular?
@@ -163,7 +171,9 @@ as_leader_tweets %>%
 
 ### Who gets retweeted more?
 
-Shorten clearly gets more retweets (median retweet `r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "billshortenmp" & as_leader_tweets$is_retweet == FALSE])` to ScoMo's`r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "ScottMorrisonMP" & as_leader_tweets$is_retweet == FALSE])`). ScoMo's tweet above about Senator Anning was also the most retweeted tweet.
+Shorten clearly gets more retweets (median retweet `r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "billshortenmp" & as_leader_tweets$is_retweet == FALSE])` to ScoMo's`r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "ScottMorrisonMP" & as_leader_tweets$is_retweet == FALSE])`). ScoMo's tweet above about Senator Anning was also the most retweeted tweet. Shorten's most retweeted tweet was about ScoMo's school's cuts:
+
+> `r as_leader_tweets %>% filter(retweet_count == max(max(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "billshortenmp"]))) %>% mutate(text = gsub('[\r\n]', '', text)) %>% pull(text)`
 
 ```{r}
 as_leader_tweets %>%
@@ -173,14 +183,21 @@ as_leader_tweets %>%
   scale_fill_manual(values = party_colours) +
   scale_colour_manual(values = party_colours) +
   scale_x_continuous(labels = comma) +
+  annotate("text", x=4600, y= 0.0015, label = "ScoMo's tweet in response\nto Senator Anning", color = liberals, size =3) +
+  annotate("segment", x= 4900, xend = max(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "ScottMorrisonMP"]) - 40, y=0.00075, yend = 0.0001, arrow = arrow(), colour = liberals) +
+  annotate("text", x=2100, y= 0.0015, label = "Shorten's tweet about\nScoMo's schools cut", color = labor, size =3) +
+  annotate("segment", x= 2100, xend = max(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "billshortenmp"]) - 40, y=0.00075, yend = 0.0001, arrow = arrow(), colour = labor) +
   labs(title = "Shorten Gets More Retweets", x= "Retweet Count") +
   theme_minimal() +
   theme(axis.title.y = element_blank(), legend.position = "top", legend.title = element_blank())
 ```
 
 
-**Winner:**
-Bill Shorten
+#### Winner:
+
+<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "billshortenmp"][1]`"></left> 
+
+**Bill Shorten (Shorten 2, Sco Mo 0)**
 
 
 ## Who has longer tweets?
@@ -222,13 +239,16 @@ as_leader_tweets %>%
   geom_text(aes(x= tweet_med_chars + 15, label = paste0("Median: ", tweet_med_chars)), data = med_chars, y= 50)
 ```
 
-**Winner:**
-ScoMo
+#### Winner:
+
+<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
+
+**ScoMo (Shorten 2, Sco Mo 1)**
 
 
-## Who uses hashtags more?
+## Who is the king of hashtags?
 
-ScoMo includes a hashtag in over 20% of his tweets. Shorten on the other hand only includes a hashtag in just over 7% of his tweets. Good old hip ScoMo!
+ScoMo includes a hashtag in over 20% of his tweets. Shorten on the other hand only includes a hashtag in just over 7% of his tweets. Good old hip ScoMo is the newly minted hashtag king!
 
 ```{r, warning=FALSE, message=FALSE}
 as_leader_tweets %>%
@@ -250,8 +270,11 @@ as_leader_tweets %>%
 ```
 
 
-**Winner:**
-ScoMo
+#### Winner:
+
+<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
+
+**ScoMo (Shorten 2, Sco Mo 2)**
 
 
 ## Who uses more media (photos, videos)?
@@ -279,8 +302,11 @@ as_leader_tweets %>%
 ```
 
 
-**Winner:**
-Bill Shorten
+#### Winner:
+
+<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "billshortenmp"][1]`"></left> 
+
+**Bill Shorten (Shorten 3, Sco Mo 2)**
 
 
 # Tweet Content Analysis
@@ -350,10 +376,6 @@ top_words_plot <- function(df, polly, party) {
     theme(axis.title = element_blank(), panel.grid = element_blank(), panel.grid.major.x = element_line(linetype =2))
 }
 
-# create an object for each party's colours for plotting
-labor <- party_colours[1]
-liberals <- party_colours[2]
-
 # create and display multi-plot
 sm <- top_words_plot(word_proportion, "ScottMorrisonMP", liberals)
 bs <- top_words_plot(word_proportion, "billshortenmp", labor)
@@ -362,8 +384,11 @@ gridExtra::grid.arrange(sm, bs, ncol = 2)
   
 ```
 
-**Winner:**
-ScoMo
+#### Winner:
+
+<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
+
+**ScoMo (Shorten 3, Sco Mo 3)**
 
 ## How often does each leader mention their opponent
 
@@ -402,8 +427,18 @@ comp_mention %>%
 
 ```
 
-**Winner:**
-ScoMo
+
+### What are the leaders saying when mentioning their opponents?
+
+When Shorten or ScoMo mention the other, what are they saying? Is it one big slanging match, do they get personal? Ooohh I hope so!
+
+
+
+#### Winner:
+
+<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
+
+**ScoMo (Shorten 3, Sco Mo 4)**
 
 
 ## Who is the more positive tweeter?
@@ -450,9 +485,11 @@ tweet_sentiment %>%
   theme(legend.position = "top", legend.title = element_blank(), axis.title.x = element_blank(), panel.grid = element_line(linetype = 2))
 ```
 
-**Winner:**
-ScoMo
+#### Winner:
 
+<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
+
+**ScoMo (Shorten 3, Sco Mo 5)**
 
 # Conclusion
 
