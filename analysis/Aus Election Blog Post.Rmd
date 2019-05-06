@@ -100,7 +100,7 @@ In that same time, Bill Shorten has been tweeting far more frequently in all ful
 
 ```{r, message=FALSE, warning=FALSE}
 pm_candidate_tweets_clean %>%
-  filter(created_year >= 2018) %>%
+  filter(created_year >= 2018, created_yearmon < '2019-05') %>%
   count(screen_name, created_yearmon) %>%
   ggplot(aes(x= created_yearmon, y= n, colour = screen_name, group = screen_name)) +
   geom_line() +
@@ -146,6 +146,7 @@ as_leader_tweets %>%
   filter(is_retweet == FALSE) %>%
   ggplot(aes(x= screen_name, y= favorite_count, fill = screen_name, colour = screen_name)) +
   geom_boxplot(alpha = 0.5) +
+  annotate("text", x=2.15, y=14800, label = "ScoMo's tweet in response\nto Senator Anning", color = liberals, size =3) +
   scale_fill_manual(values = party_colours) +
   scale_colour_manual(values = party_colours) +
   scale_y_continuous(labels = comma) +
@@ -158,6 +159,9 @@ as_leader_tweets %>%
   filter(is_retweet == FALSE, favorite_count < 10000) %>%
   ggplot(aes(x= screen_name, y= favorite_count, fill = screen_name, colour = screen_name)) +
   geom_boxplot(alpha = 0.5) +
+  annotate("text", x=1.5, y=3100, label = "50% of Shorten's tweets get at\nleast 536 favourites, while 50% of\nScoMos tweets get only 325") +
+  annotate("segment", x=1.6, xend = 2, y=1800, yend = 325, arrow = arrow()) +
+  annotate("segment", x=1.4, xend = 1, y=1800, yend = 536, arrow = arrow()) +
   scale_fill_manual(values = party_colours) +
   scale_colour_manual(values = party_colours) +
   scale_y_continuous(labels = comma) +
@@ -304,9 +308,7 @@ as_leader_tweets %>%
 
 #### Winner:
 
-<left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "billshortenmp"][1]`"></left> 
-
-**Bill Shorten (Shorten 3, Sco Mo 2)**
+**Bill Shorten (Shorten 2, Sco Mo 2)**
 
 
 # Tweet Content Analysis
@@ -388,7 +390,7 @@ gridExtra::grid.arrange(sm, bs, ncol = 2)
 
 <left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
 
-**ScoMo (Shorten 3, Sco Mo 3)**
+**ScoMo (Shorten 2, Sco Mo 3)**
 
 ## How often does each leader mention their opponent
 
@@ -438,7 +440,7 @@ When Shorten or ScoMo mention the other, what are they saying? Is it one big sla
 
 <left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
 
-**ScoMo (Shorten 3, Sco Mo 4)**
+**ScoMo (Shorten 2, Sco Mo 4)**
 
 
 ## Who is the more positive tweeter?
@@ -474,11 +476,12 @@ tweet_sentiment %>%
   mutate(created_yearmon = format(as.Date(created_date), "%Y-%m")) %>%
   group_by(screen_name, created_yearmon) %>%
   summarise(positivity_index = sum(score)) %>%
+  filter(created_yearmon < '2019-05') %>%
   ggplot(aes(x= created_yearmon, y= positivity_index, colour = screen_name, group = screen_name)) +
   geom_line() + 
   geom_point() +
   geom_hline(yintercept = 0, colour = "black", linetype = 2) +
-  annotate("text", x= "2019-05", y= 5, label = "Neutral", size = 6) +
+  annotate("text", x= "2019-04", y= 5, label = "Neutral", size = 6) +
   scale_colour_manual(values = party_colours) +
   labs(title = "Shorten Ramping Up Negativity In The Lead Up To The Election", y= "Positivity Score") +
   theme_minimal() +
@@ -489,10 +492,10 @@ tweet_sentiment %>%
 
 <left><img src="`r as_leader_tweets$profile_image_url[as_leader_tweets$screen_name == "ScottMorrisonMP"][1]`"></left> 
 
-**ScoMo (Shorten 3, Sco Mo 5)**
+**ScoMo (Shorten 2, Sco Mo 5)**
 
 # Conclusion
 
-Of the eight questions posed, ScoMo wins five to Shorten's three from my perspective. While Shorten tweets more frequently and uses imagery more often, the content of ScoMo's tweets get him over the line in my 2019 Federal Twitter election.
+Of the eight questions posed, ScoMo wins five to Shorten's two from my perspective. The two candidates drew one question. While Shorten tweets more frequently and uses imagery more often, the content of ScoMo's tweets get him over the line in my 2019 Federal Twitter election.
 
 
