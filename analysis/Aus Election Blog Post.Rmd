@@ -12,6 +12,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(mediumr)
 ```
 
 
@@ -50,9 +51,9 @@ Packages used in the analysis are listed below:
 
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 # load libraries
-source("../libs/libraries.R")
+source("libs/libraries.R")
 
-pm_candidate_tweets <- readRDS("../data/pm_candidate_tweets_raw.rds")
+pm_candidate_tweets <- readRDS("data/pm_candidate_tweets_raw.rds")
 
 # select only required columns
 pm_candidate_tweets_clean <- pm_candidate_tweets %>% 
@@ -175,7 +176,7 @@ as_leader_tweets %>%
 
 ### Who gets retweeted more?
 
-Shorten clearly gets more retweets (median retweet `r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "billshortenmp" & as_leader_tweets$is_retweet == FALSE])` to ScoMo's`r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "ScottMorrisonMP" & as_leader_tweets$is_retweet == FALSE])`). ScoMo's tweet above about Senator Anning was also the most retweeted tweet. Shorten's most retweeted tweet was about ScoMo's school's cuts:
+Shorten clearly gets more retweets (median retweet `r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "billshortenmp" & as_leader_tweets$is_retweet == FALSE])` to ScoMo's `r median(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "ScottMorrisonMP" & as_leader_tweets$is_retweet == FALSE])`). ScoMo's tweet above about Senator Anning was also the most retweeted tweet. Shorten's most retweeted tweet was about ScoMo's school's cuts:
 
 > `r as_leader_tweets %>% filter(retweet_count == max(max(as_leader_tweets$retweet_count[as_leader_tweets$screen_name == "billshortenmp"]))) %>% mutate(text = gsub('[\r\n]', '', text)) %>% pull(text)`
 
@@ -494,8 +495,81 @@ tweet_sentiment %>%
 
 **ScoMo (Shorten 2, Sco Mo 5)**
 
+
 # Conclusion
 
 Of the eight questions posed, ScoMo wins five to Shorten's two from my perspective. The two candidates drew one question. While Shorten tweets more frequently and uses imagery more often, the content of ScoMo's tweets get him over the line in my 2019 Federal Twitter election.
+
+
+# Bonus Content
+
+Ok, more so because I'm intrigued, the words both leaders use most frequently when either mentioning or not mentioning their opponent in their tweets are below.
+
+Shorten talks about fairness, time, deliver and families when he's not talking about ScoMo. Ehen he is, it seems to be heavily influenced by the banks and the royal commission, cuts to penalty rates and schools.
+
+
+```{r}
+
+a <- comp_mention %>%
+  left_join(tweets_words %>% select(status_id, word), by = "status_id")
+
+
+short_1 <- a %>% filter(screen_name == "billshortenmp", is_competitor_mention == FALSE) %>%
+  count(word) %>%
+  arrange(desc(n)) %>%
+  head(20) %>%
+  ggplot(aes(x=reorder(word,n), y=n)) +
+  geom_col(fill = labor, alpha = 0.5) +
+  coord_flip() +
+  ggtitle("Top 20 Words Shorten Uses When\nNOT Mentioning His Opponent") +
+  theme_minimal() +
+  theme(axis.title = element_blank())
+
+short_2 <- a %>% filter(screen_name == "billshortenmp", is_competitor_mention == TRUE) %>%
+  count(word) %>%
+  arrange(desc(n)) %>%
+  head(20) %>%
+  ggplot(aes(x=reorder(word,n), y=n)) +
+  geom_col(fill = labor) +
+  coord_flip() +
+  ggtitle("Top 20 Words Shorten Uses When\nMentioning His Opponent") +
+  theme_minimal() +
+  theme(axis.title = element_blank())
+
+gridExtra::grid.arrange(short_1, short_2, ncol = 2)
+
+```
+
+
+ScoMo on the other hand talks about the strength of his government, jobs, the economy, suport and having a plane when not mentioning Shorten, while his most frequent words when Shorten is mentioned are about tax, borders, detention and retirees. As we saw earlier, Shorten or Labor don't feature too heavily in ScoMo's tweets.
+
+```{r}
+scomo_1 <- a %>% filter(screen_name == "ScottMorrisonMP", is_competitor_mention == FALSE) %>%
+  count(word) %>%
+  arrange(desc(n)) %>%
+  head(20) %>%
+  ggplot(aes(x=reorder(word,n), y=n)) +
+  geom_col(fill = liberals, alpha = 0.5) +
+  coord_flip() +
+  ggtitle("Top 20 Words ScoMo Uses When\nNOT Mentioning His Opponent") +
+  theme_minimal() +
+  theme(axis.title = element_blank())
+
+scomo_2 <- a %>% filter(screen_name == "ScottMorrisonMP", is_competitor_mention == TRUE) %>%
+  count(word) %>%
+  arrange(desc(n)) %>%
+  head(20) %>%
+  ggplot(aes(x=reorder(word,n), y=n)) +
+  geom_col(fill = liberals) +
+  coord_flip() +
+  ggtitle("Top 20 Words ScoMo Uses When\nMentioning His Opponent") +
+  theme_minimal() +
+  theme(axis.title = element_blank())
+
+gridExtra::grid.arrange(scomo_1, scomo_2, ncol = 2)
+```
+
+
+Feel free to comment if you have any thoughts.
 
 
